@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ZenKanban | Secure P2P Kanban Board</title>
+  <meta name="description" content="ZenKanban - Decentralized End-to-End Encrypted Drag & Drop Kanban Board.">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+
+  <style>
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --font-sans: 'Outfit', sans-serif;
+      --font-mono: 'IBM Plex Mono', monospace;
+
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-light: rgba(59, 130, 246, 0.1);
+      --priority-urgent: #ef4444;
+      --priority-high: #f97316;
+      --priority-medium: #eab308;
+      --priority-low: #10b981;
+    }
+
+    [data-theme="light"] {
+      --bg-app: #f1f5f9;
+      --bg-sidebar: #ffffff;
+      --bg-column: #e2e8f0;
+      --bg-card: #ffffff;
+      --bg-modal: #ffffff;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --border-color: rgba(0, 0, 0, 0.08);
+      --border-hover: rgba(0, 0, 0, 0.15);
+      --input-bg: #ffffff;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="dark"] {
+      --bg-app: #0b0f17;
+      --bg-sidebar: #111726;
+      --bg-column: #161e2e;
+      --bg-card: #1d283a;
+      --bg-modal: #161e2e;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border-color: rgba(255, 255, 255, 0.08);
+      --border-hover: rgba(255, 255, 255, 0.16);
+      --input-bg: #0f172a;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-app);
+      color: var(--text-primary);
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+    }
+
+    /* Auth Overlay */
+    .auth-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(11, 15, 23, 0.88);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .auth-card {
+      background: var(--bg-sidebar);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 36px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-md);
+      text-align: center;
+    }
+
+    .auth-logo {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+      text-align: left;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .form-input,
+    .form-select,
+    .form-textarea {
+      width: 100%;
+      padding: 10px 14px;
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      outline: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-family: var(--font-sans);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s ease;
+    }
+
+    .btn-accent {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    .btn-accent:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--input-bg);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    /* Board Container */
+    .app-container {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+      height: 100%;
+    }
+
+    .topbar {
+      height: 64px;
+      background: var(--bg-sidebar);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .board-columns {
+      flex: 1;
+      display: flex;
+      gap: 20px;
+      padding: 24px;
+      overflow-x: auto;
+      align-items: start;
+    }
+
+    .column {
+      width: 320px;
+      min-width: 320px;
+      background: var(--bg-column);
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      max-height: 100%;
+      border: 1px solid var(--border-color);
+    }
+
+    .column-header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .column-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .column-count {
+      font-size: 0.75rem;
+      background: var(--bg-card);
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .cards-list {
+      flex: 1;
+      padding: 0 12px 12px 12px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-height: 100px;
+    }
+
+    .kanban-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+      cursor: grab;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .kanban-card:active {
+      cursor: grabbing;
+      opacity: 0.7;
+    }
+
+    .card-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .badge-urgent { background: rgba(239, 68, 68, 0.15); color: var(--priority-urgent); }
+    .badge-high { background: rgba(249, 115, 22, 0.15); color: var(--priority-high); }
+    .badge-medium { background: rgba(234, 179, 8, 0.15); color: var(--priority-medium); }
+    .badge-low { background: rgba(16, 185, 129, 0.15); color: var(--priority-low); }
+
+    .card-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-card {
+      background: var(--bg-modal);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Auth Overlay -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <i class="ti ti-layout-kanban"></i> ZenKanban
+      </div>
+      <p style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 24px;">
+        Decentralized Drag & Drop Project Board
+      </p>
+      <form onsubmit="event.preventDefault(); window.login();">
+        <div class="form-group">
+          <label class="form-label">Identity</label>
+          <input type="text" id="user-input" class="form-input" placeholder="e.g. dev" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Master Passphrase</label>
+          <input type="password" id="pass-input" class="form-input" placeholder="••••••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-accent" style="width: 100%; margin-top: 10px;">
+          <i class="ti ti-lock-open"></i> Open Board
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="app-container">
+    <header class="topbar">
+      <div class="brand">
+        <i class="ti ti-layout-kanban"></i> ZenKanban
+      </div>
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-accent" onclick="openAddCardModal()">
+          <i class="ti ti-plus"></i> Add Card
+        </button>
+        <button class="btn btn-secondary" onclick="toggleTheme()"><i class="ti ti-sun" id="theme-icon"></i></button>
+        <button class="btn btn-secondary" onclick="logout()"><i class="ti ti-lock"></i></button>
+      </div>
+    </header>
+
+    <main class="board-columns">
+      <!-- Backlog -->
+      <div class="column" ondragover="allowDrop(event)" ondrop="dropCard(event, 'backlog')">
+        <div class="column-header">
+          <div class="column-title"><i class="ti ti-stack-2"></i> Backlog</div>
+          <span class="column-count" id="count-backlog">0</span>
+        </div>
+        <div class="cards-list" id="col-backlog"></div>
+      </div>
+
+      <!-- To Do -->
+      <div class="column" ondragover="allowDrop(event)" ondrop="dropCard(event, 'todo')">
+        <div class="column-header">
+          <div class="column-title"><i class="ti ti-list-check"></i> To Do</div>
+          <span class="column-count" id="count-todo">0</span>
+        </div>
+        <div class="cards-list" id="col-todo"></div>
+      </div>
+
+      <!-- In Progress -->
+      <div class="column" ondragover="allowDrop(event)" ondrop="dropCard(event, 'progress')">
+        <div class="column-header">
+          <div class="column-title"><i class="ti ti-loader"></i> In Progress</div>
+          <span class="column-count" id="count-progress">0</span>
+        </div>
+        <div class="cards-list" id="col-progress"></div>
+      </div>
+
+      <!-- Done -->
+      <div class="column" ondragover="allowDrop(event)" ondrop="dropCard(event, 'done')">
+        <div class="column-header">
+          <div class="column-title"><i class="ti ti-circle-check"></i> Done</div>
+          <span class="column-count" id="count-done">0</span>
+        </div>
+        <div class="cards-list" id="col-done"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Card Modal -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h3 id="modal-title" style="font-size: 1.2rem; font-weight: 700;">Add Kanban Card</h3>
+        <button class="btn btn-secondary" style="padding: 4px 8px;" onclick="closeModal()"><i class="ti ti-x"></i></button>
+      </div>
+      <form onsubmit="event.preventDefault(); saveCard();">
+        <input type="hidden" id="card-id">
+        <div class="form-group">
+          <label class="form-label">Task Title</label>
+          <input type="text" id="card-title-input" class="form-input" placeholder="e.g. Implement P2P Audio Sync" required>
+        </div>
+        <div class="form-group" style="display: flex; gap: 10px;">
+          <div style="flex: 1;">
+            <label class="form-label">Column</label>
+            <select id="card-column-select" class="form-select">
+              <option value="backlog">Backlog</option>
+              <option value="todo">To Do</option>
+              <option value="progress">In Progress</option>
+              <option value="done">Done</option>
+            </select>
+          </div>
+          <div style="flex: 1;">
+            <label class="form-label">Priority</label>
+            <select id="card-priority-select" class="form-select">
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+              <option value="urgent">Urgent</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tag / Category</label>
+          <input type="text" id="card-tag-input" class="form-input" placeholder="e.g. Dev, Music, UI">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea id="card-desc-input" class="form-textarea" rows="3" placeholder="Task details..."></textarea>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 24px;">
+          <button type="button" id="btn-delete-card" class="btn btn-secondary" style="color: #ef4444;" onclick="deleteActiveCard()">Delete</button>
+          <div style="display: flex; gap: 10px;">
+            <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-accent">Save Card</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let currentTheme = localStorage.getItem('theme') || 'light';
+    function applyTheme() {
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      const icon = document.getElementById('theme-icon');
+      if (icon) icon.className = currentTheme === 'light' ? 'ti ti-sun' : 'ti ti-moon';
+    }
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('theme', currentTheme);
+      applyTheme();
+    }
+    document.addEventListener('DOMContentLoaded', applyTheme);
+  </script>
+
+  <script type="module">
+    import ZEN from 'https://cdn.jsdelivr.net/gh/scobru/zen@main/zen.min.js';
+
+    let zen;
+    let pair;
+    let cards = {};
+    let draggedCardId = null;
+
+    const relays = ["wss://delay.scobrudot.dev/zen", "wss://zen.akao.io:8420/zen"];
+    zen = new ZEN({ peers: relays });
+
+    async function login() {
+      const u = document.getElementById('user-input').value || sessionStorage.getItem('zenkanban_user');
+      const p = document.getElementById('pass-input').value || sessionStorage.getItem('zenkanban_pass');
+      if (!u || !p) return;
+
+      pair = await ZEN.pair(null, { seed: u + p });
+      sessionStorage.setItem('zenkanban_user', u);
+      sessionStorage.setItem('zenkanban_pass', p);
+      document.getElementById('auth-overlay').classList.add('hidden');
+
+      zen.get('~' + pair.pub).get('zenkanban').map().on((data, soul) => {
+        if (!data) delete cards[soul];
+        else cards[soul] = { soul, ...data };
+        renderBoard();
+      });
+    }
+
+    function logout() {
+      sessionStorage.clear();
+      location.reload();
+    }
+
+    function renderBoard() {
+      const cols = { backlog: [], todo: [], progress: [], done: [] };
+      Object.values(cards).forEach(c => {
+        const columnKey = cols[c.column] ? c.column : 'backlog';
+        cols[columnKey].push(c);
+      });
+
+      ['backlog', 'todo', 'progress', 'done'].forEach(colKey => {
+        const container = document.getElementById('col-' + colKey);
+        const countSpan = document.getElementById('count-' + colKey);
+        container.innerHTML = '';
+        countSpan.textContent = cols[colKey].length;
+
+        cols[colKey].forEach(card => {
+          const el = document.createElement('div');
+          el.className = 'kanban-card';
+          el.draggable = true;
+          el.ondragstart = (e) => { draggedCardId = card.soul; };
+          el.onclick = () => openEditCardModal(card.soul);
+
+          el.innerHTML = `
+            <div class="card-tags">
+              <span class="tag-badge badge-${card.priority || 'medium'}">${escapeHtml(card.priority || 'medium')}</span>
+              ${card.tag ? `<span class="tag-badge" style="background: var(--accent-light); color: var(--accent);">${escapeHtml(card.tag)}</span>` : ''}
+            </div>
+            <div class="card-title">${escapeHtml(card.title)}</div>
+            ${card.desc ? `<div style="font-size: 0.8rem; color: var(--text-secondary);">${escapeHtml(card.desc)}</div>` : ''}
+          `;
+          container.appendChild(el);
+        });
+      });
+    }
+
+    function saveCard() {
+      const id = document.getElementById('card-id').value || 'card_' + Date.now();
+      const title = document.getElementById('card-title-input').value;
+      const column = document.getElementById('card-column-select').value;
+      const priority = document.getElementById('card-priority-select').value;
+      const tag = document.getElementById('card-tag-input').value;
+      const desc = document.getElementById('card-desc-input').value;
+
+      const record = { title, column, priority, tag, desc, timestamp: Date.now() };
+
+      zen.get('~' + pair.pub).get('zenkanban').get(id).put(record, (ack) => {
+        if (!ack.err) closeModal();
+      }, { authenticator: pair });
+    }
+
+    function deleteActiveCard() {
+      const id = document.getElementById('card-id').value;
+      if (id && confirm('Erase this card?')) {
+        zen.get('~' + pair.pub).get('zenkanban').get(id).put(null, () => closeModal(), { authenticator: pair });
+      }
+    }
+
+    window.allowDrop = (e) => e.preventDefault();
+    window.dropCard = (e, targetCol) => {
+      e.preventDefault();
+      if (draggedCardId && cards[draggedCardId]) {
+        cards[draggedCardId].column = targetCol;
+        zen.get('~' + pair.pub).get('zenkanban').get(draggedCardId).get('column').put(targetCol, null, { authenticator: pair });
+        draggedCardId = null;
+        renderBoard();
+      }
+    };
+
+    function escapeHtml(str) {
+      return (str || '').replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    }
+
+    window.login = login;
+    window.logout = logout;
+    window.saveCard = saveCard;
+    window.deleteActiveCard = deleteActiveCard;
+    window.openAddCardModal = () => {
+      document.getElementById('modal-title').textContent = 'Add Kanban Card';
+      document.getElementById('card-id').value = '';
+      document.getElementById('card-title-input').value = '';
+      document.getElementById('card-tag-input').value = '';
+      document.getElementById('card-desc-input').value = '';
+      document.getElementById('btn-delete-card').classList.add('hidden');
+      document.getElementById('modal-overlay').classList.remove('hidden');
+    };
+    window.openEditCardModal = (soul) => {
+      const c = cards[soul];
+      if (!c) return;
+      document.getElementById('modal-title').textContent = 'Edit Card';
+      document.getElementById('card-id').value = soul;
+      document.getElementById('card-title-input').value = c.title || '';
+      document.getElementById('card-column-select').value = c.column || 'backlog';
+      document.getElementById('card-priority-select').value = c.priority || 'medium';
+      document.getElementById('card-tag-input').value = c.tag || '';
+      document.getElementById('card-desc-input').value = c.desc || '';
+      document.getElementById('btn-delete-card').classList.remove('hidden');
+      document.getElementById('modal-overlay').classList.remove('hidden');
+    };
+    window.closeModal = () => document.getElementById('modal-overlay').classList.add('hidden');
+
+    if (sessionStorage.getItem('zenkanban_user') && sessionStorage.getItem('zenkanban_pass')) {
+      login();
+    }
+  </script>
+</body>
+
+</html>
