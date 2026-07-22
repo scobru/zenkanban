@@ -330,6 +330,62 @@
     .hidden {
       display: none !important;
     }
+
+    /* Mobile Navigation & Responsive Styles */
+    @media (max-width: 768px) {
+      .topbar {
+        padding: 0 12px;
+        height: auto;
+        min-height: 56px;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .brand {
+        font-size: 1.1rem;
+      }
+
+      .board-columns {
+        padding: 12px 8px;
+        gap: 12px;
+        scroll-snap-type: x mandatory;
+      }
+
+      .column {
+        width: 85vw;
+        min-width: 260px;
+        scroll-snap-align: center;
+      }
+
+      .modal-card {
+        padding: 20px;
+        max-width: 95vw;
+      }
+
+      .btn {
+        font-size: 0.8rem;
+        padding: 8px 12px;
+      }
+
+      .kanban-card {
+        padding: 12px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .topbar {
+        padding: 0 10px;
+      }
+
+      .column {
+        width: 90vw;
+        min-width: 240px;
+      }
+
+      .board-columns {
+        padding: 10px 6px;
+      }
+    }
   </style>
 </head>
 
