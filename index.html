@@ -535,7 +535,7 @@
 
           el.innerHTML = `
             <div class="card-tags">
-              <span class="tag-badge badge-${card.priority || 'medium'}">${escapeHtml(card.priority || 'medium')}</span>
+              <span class="tag-badge badge-${escapeHtml(card.priority || 'medium')}">${escapeHtml(card.priority || 'medium')}</span>
               ${card.tag ? `<span class="tag-badge" style="background: var(--accent-light); color: var(--accent);">${escapeHtml(card.tag)}</span>` : ''}
             </div>
             <div class="card-title">${escapeHtml(card.title)}</div>
@@ -572,8 +572,12 @@
     window.dropCard = (e, targetCol) => {
       e.preventDefault();
       if (draggedCardId && cards[draggedCardId]) {
-        cards[draggedCardId].column = targetCol;
-        zen.get('~' + pair.pub).get('zenkanban').get(draggedCardId).get('column').put(targetCol, null, { authenticator: pair });
+        const cardId = draggedCardId;
+        const prevColumn = cards[cardId].column;
+        cards[cardId].column = targetCol;
+        zen.get('~' + pair.pub).get('zenkanban').get(cardId).get('column').put(targetCol, (ack) => {
+          if (ack.err && cards[cardId]) { cards[cardId].column = prevColumn; renderBoard(); }
+        }, { authenticator: pair });
         draggedCardId = null;
         renderBoard();
       }
